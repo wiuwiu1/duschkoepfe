@@ -12,6 +12,7 @@ AJMP init
 init:
 MOV TMOD, #11H
 MOV P2, #00H
+MOV DPTR, #table 
 AJMP hahncheck
 
 hahncheck:
@@ -21,7 +22,7 @@ AJMP wasserberechnungstart
 wasserberechnungstart:
 MOV WASSERVERBRAUCH, #0D
 MOV TH0, #00H
-MOV TL0, #0F5H
+MOV TL0, @TL0+DPTR
 SETB TR0
 berechnungsstep:
 MOV R1, TH0
@@ -31,3 +32,4 @@ CJNE R1, #01H, berechnungsstep
 
 table:
 db 100D
+db #0F0H
