@@ -1,0 +1,2 @@
+; Var
+EIN1 EQU 20H
