@@ -1,47 +1,186 @@
 untitled                                                                                                                PAGE 1
                          1     ; Var
-  00A0                   2     DRUCKSENSOR EQU P2.0
-  00A1                   3     WASSERHAHNSENSOR EQU P2.1
-  0090                   4     WASSERZAEHLER EQU P1
-                         5
-                         6     WASSERVERBRAUCH EQU R0
-                         7     TIMERWERT EQU R1
-                         8
-                         9
-0000 0102               10     AJMP init
-                        11
-                        12     init:
-0002 758911             13     MOV TMOD, #11H
-0005 75A000             14     MOV P2, #00H
-0008 010A               15     AJMP hahncheck
-                        16
-                        17     hahncheck:
-000A 30A1FD             18     JNB WASSERHAHNSENSOR, hahncheck
-000D 010F               19     AJMP wasserberechnungstart
+  0080                   2     INPUT EQU P0
+  0080                   3     DRUCKSENSOR EQU INPUT.0
+  0081                   4     WASSERHAHNSENSOR EQU INPUT.1
+  0082                   5     WARMWASSERVENTIL EQU INPUT.2
+  0083                   6     KALTWASSERVENTIL EQU INPUT.3
+  0084                   7     WARNTON EQU INPUT.4
+  0085                   8     FANFARE EQU INPUT.5
+  0090                   9     WASSERZAEHLER EQU P1
+  00A0                  10     SEGMENTWERT EQU P2
+  00B0                  11     SEGMENTZIFFER EQU P3
+                        12
+                        13     TIMERWERT EQU R0
+                        14     WASSERVERBRAUCH EQU R1
+                        15     WASSERVERBRAUCH2 EQU R2
+                        16     WASSERVERBRAUCH3 EQU R3
+                        17     DISPLAYWERT EQU R4
+                        18
+                        19     AJMP init
                         20
-                        21     wasserberechnungstart:
-000F 7800               22     MOV WASSERVERBRAUCH, #0D
-0011 758C00             23     MOV TH0, #00H
-0014 758AF5             24     MOV TL0, #0F5H
-0017 D28C               25     SETB TR0
-                        26     berechnungsstep:
-0019 A98C               27     MOV R1, TH0
-001B B901FB             28     CJNE R1, #01H, berechnungsstep
-                        29
-                        30
+                        21     init:
+                        22     MOV TMOD, #11H
+                        23     MOV TIMERWERT, #00H
+                        24     MOV WASSERVERBRAUCH, #00H
+                        25     MOV WASSERVERBRAUCH2, #00H
+                        26     MOV WASSERVERBRAUCH3, #00H
+                        27     MOV DISPLAYWERT, #00H
+                        28     MOV INPUT, #00H
+                        29     MOV DPTR, #table
+                        30     AJMP startcheck
                         31
-                        32     table:
-001E 64                 33     db 100D
+                        32     ;TODO wenn drucksensor dann wasser aufdrehen
+                        33     startcheck:
+                        34     JNB WASSERHAHNSENSOR, startcheck
+                        35     AJMP wasserberechnungstart
+                        36
+                        37     wasserberechnungstart:
+                        38     MOV WASSERVERBRAUCH, #0D
+                        39     MOV TH0, #00H
+                        40     MOV A, #1D
+                        41     MOVC A, @A+DPTR
+                        42     MOV TL0, A
+                        43     SETB TR0
+                        44
+                        45     berechnungsstep:
+                        46     MOV R0, TH0
+                        47     CJNE R0, #04H, berechnungsstep
+                        48     ;timer zurücksetzten
+                        49     MOV TH0, #00H
+                        50     MOV A, #11D
+                        51     MOVC A, @A+DPTR
+                        52     MOV TL0, A
+                        53     SETB TR0
+                        54     ;add wassersensor auf wasserverbrauch drauf
+                        55     MOV A, WASSERZAEHLER
+                        56     ADD A, WASSERVERBRAUCH
+                        57     MOV WASSERVERBRAUCH, A
+                        58     JB C, ueberlaufberechnung1
+                        59     AJMP ausgabe
+                        60     abbruchbedingungen:
+                        61     ;todo wasser max erreicht
+                        62     JNB DRUCKSENSOR, duscheverlassen
+                        63     AJMP berechnungsstep
+                        64
+                        65     ueberlaufberechnung1:
+                        66     MOV A, WASSERVERBRAUCH2
+                        67     INC A
+                        68     MOV WASSERVERBRAUCH2, A
+                        69     JB C, ueberlaufberechnung2
+                        70     AJMP abbruchbedingungen
+                        71
+                        72     ueberlaufberechnung2:
+                        73     MOV A, WASSERVERBRAUCH3
+                        74     INC A
+                        75     MOV WASSERVERBRAUCH3, A
+                        76     AJMP abbruchbedingungen
+                        77
+                        78     ausgabe:
+                        79     ;displaywert aus wasservebrauch auf 1 byte kürzen
+                        80     MOV DISPLAYWERT.0, WASSERVERBRAUCH2.2
+****ERROR:Expectedbitaddress:WASSERVERBRAUCH2.2
+****ERROR:Expectedbitaddress:DISPLAYWERT.0
+                        81     MOV DISPLAYWERT.1, WASSERVERBRAUCH2.3
+****ERROR:Expectedbitaddress:WASSERVERBRAUCH2.3
+****ERROR:Expectedbitaddress:DISPLAYWERT.1
+                        82     MOV DISPLAYWERT.2, WASSERVERBRAUCH2.4
+****ERROR:Expectedbitaddress:WASSERVERBRAUCH2.4
+****ERROR:Expectedbitaddress:DISPLAYWERT.2
+                        83     MOV DISPLAYWERT.3, WASSERVERBRAUCH2.5
+****ERROR:Expectedbitaddress:WASSERVERBRAUCH2.5
+****ERROR:Expectedbitaddress:DISPLAYWERT.3
+                        84     MOV DISPLAYWERT.4, WASSERVERBRAUCH2.6
+****ERROR:Expectedbitaddress:WASSERVERBRAUCH2.6
+****ERROR:Expectedbitaddress:DISPLAYWERT.4
+                        85     MOV DISPLAYWERT.5, WASSERVERBRAUCH2.7
+****ERROR:Expectedbitaddress:WASSERVERBRAUCH2.7
+****ERROR:Expectedbitaddress:DISPLAYWERT.5
+                        86     MOV DISPLAYWERT.6, WASSERVERBRAUCH3.0
+****ERROR:Expectedbitaddress:WASSERVERBRAUCH3.0
+****ERROR:Expectedbitaddress:DISPLAYWERT.6
+                        87     MOV DISPLAYWERT.7, WASSERVERBRAUCH3.1
+****ERROR:Expectedbitaddress:WASSERVERBRAUCH3.1
+****ERROR:Expectedbitaddress:DISPLAYWERT.7
+                        88
+                        89     ;1. (vorderste) ziffer setzen. ist immer 0
+                        90     MOV segmentziffer, #1000B
+                        91     MOV A, #0D
+                        92     MOVC A, @A+DPTR
+                        93     MOV segmentwert, A
+                        94
+                        95     ;2. ziffer setzen
+                        96     MOV segmentziffer, #0100B
+                        97     MOV A, DISPLAYWERT
+                        98     MOV B, #100D
+                        99     DIV AB
+                       100     MOVC A, @A+DPTR
+                       101     MOV segmentwert, A
+                       102     MOV displaywert, B
+                       103
+                       104     ;3. ziffer setzen
+                       105     MOV segmentziffer, #0010B
+                       106     MOV A, DISPLAYWERT
+                       107     MOV B, #10D
+                       108     DIV AB
+                       109     MOVC A, @A+DPTR
+                       110     MOV segmentwert, A
+                       111     MOV displaywert, B
+                       112
+                       113     ;4. ziffer setzen
+                       114     MOV segmentziffer, #0001B
+                       115     MOV A, DISPLAYWERT
+                       116     MOVC A, @A+DPTR
+                       117     MOV segmentwert, A
+                       118
+                       119     AJMP abbruchbedingungen
+                       120
+                       121     ;abbruchbedingungnen:
+                       122     duscheVerlassen:
+                       123     JB WASSERHAHNSENSOR, duscheVerlassenBad
+                       124     SETB FANFARE
+                       125     CLR FANFARE
+                       126     AJMP init
+                       127
+                       128     duscheVerlassenBad:
+                       129     SETB WARNTON
+                       130     CLR WARNTON
+                       131     AJMP init
+                       132
+                       133     table:
+00A4 C0                134     db 11000000b
+00A5 F9A4B0            135     db 11111001b, 10100100b, 10110000b
+00A8 999282            136     db 10011001b, 10010010b, 10000010b
+00AB F88090            137     db 11111000b, 10000000b, 10010000b
+00AE 64                138     db 100D
+00AF 18                139     db 00011000B
 ****WARNING:Missing`END'directive
-ASSEMBLY COMPLETE, NO ERRORS FOUND, 1 WARNING
+ASSEMBLY COMPLETE, NO ERRORS FOUND, 17 WARNINGS
 
 
 ERROR SUMMARY:
-Line 33, WARNING:Missing`END'directive
+Line 80, ERROR:Expectedbitaddress:WASSERVERBRAUCH2.2
+Line 81, ERROR:Expectedbitaddress:DISPLAYWERT.0
+Line 83, ERROR:Expectedbitaddress:WASSERVERBRAUCH2.3
+Line 84, ERROR:Expectedbitaddress:DISPLAYWERT.1
+Line 86, ERROR:Expectedbitaddress:WASSERVERBRAUCH2.4
+Line 87, ERROR:Expectedbitaddress:DISPLAYWERT.2
+Line 89, ERROR:Expectedbitaddress:WASSERVERBRAUCH2.5
+Line 90, ERROR:Expectedbitaddress:DISPLAYWERT.3
+Line 92, ERROR:Expectedbitaddress:WASSERVERBRAUCH2.6
+Line 93, ERROR:Expectedbitaddress:DISPLAYWERT.4
+Line 95, ERROR:Expectedbitaddress:WASSERVERBRAUCH2.7
+Line 96, ERROR:Expectedbitaddress:DISPLAYWERT.5
+Line 98, ERROR:Expectedbitaddress:WASSERVERBRAUCH3.0
+Line 99, ERROR:Expectedbitaddress:DISPLAYWERT.6
+Line 101, ERROR:Expectedbitaddress:WASSERVERBRAUCH3.1
+Line 102, ERROR:Expectedbitaddress:DISPLAYWERT.7
+Line 155, WARNING:Missing`END'directive
 
 SYMBOL TABLE:
 ??MCU_8051_IDE . . . . . . . . . . .  N  NUMB  8051H  NOT USED
 ??VERSION. . . . . . . . . . . . . .  N  NUMB  0149H  NOT USED
+ABBRUCHBEDINGUNGEN . . . . . . . . .  C  ADDR  0040H
 AC . . . . . . . . . . . . . . . . .  B  ADDR  00D6H  NOT USED
 ACC. . . . . . . . . . . . . . . . .  D  ADDR  00E0H  NOT USED
 ACSR . . . . . . . . . . . . . . . .  D  ADDR  0097H  NOT USED
@@ -50,12 +189,13 @@ ADCLK. . . . . . . . . . . . . . . .  D  ADDR  00F2H  NOT USED
 ADCON. . . . . . . . . . . . . . . .  D  ADDR  00F3H  NOT USED
 ADDH . . . . . . . . . . . . . . . .  D  ADDR  00F5H  NOT USED
 ADDL . . . . . . . . . . . . . . . .  D  ADDR  00F4H  NOT USED
+AUSGABE. . . . . . . . . . . . . . .  C  ADDR  0052H
 AUXR . . . . . . . . . . . . . . . .  D  ADDR  008EH  NOT USED
 AUXR1. . . . . . . . . . . . . . . .  D  ADDR  00A2H  NOT USED
-B. . . . . . . . . . . . . . . . . .  D  ADDR  00F0H  NOT USED
+B. . . . . . . . . . . . . . . . . .  D  ADDR  00F0H
 BDRCON . . . . . . . . . . . . . . .  D  ADDR  009BH  NOT USED
 BDRCON_1 . . . . . . . . . . . . . .  D  ADDR  009CH  NOT USED
-BERECHNUNGSSTEP. . . . . . . . . . .  C  ADDR  0019H
+BERECHNUNGSSTEP. . . . . . . . . . .  C  ADDR  0028H
 BRL. . . . . . . . . . . . . . . . .  D  ADDR  009AH  NOT USED
 CCAP0H . . . . . . . . . . . . . . .  D  ADDR  00FAH  NOT USED
 CCAP0L . . . . . . . . . . . . . . .  D  ADDR  00EAH  NOT USED
@@ -94,13 +234,16 @@ CPRL2. . . . . . . . . . . . . . . .  B  ADDR  00C8H  NOT USED
 CR . . . . . . . . . . . . . . . . .  B  ADDR  00DEH  NOT USED
 CT2. . . . . . . . . . . . . . . . .  B  ADDR  00C9H  NOT USED
 CY . . . . . . . . . . . . . . . . .  B  ADDR  00D7H  NOT USED
+DISPLAYWERT. . . . . . . . . . . . .  S  SPEC  R4
 DP0H . . . . . . . . . . . . . . . .  D  ADDR  0083H  NOT USED
 DP0L . . . . . . . . . . . . . . . .  D  ADDR  0082H  NOT USED
 DP1H . . . . . . . . . . . . . . . .  D  ADDR  0085H  NOT USED
 DP1L . . . . . . . . . . . . . . . .  D  ADDR  0084H  NOT USED
 DPH. . . . . . . . . . . . . . . . .  D  ADDR  0083H  NOT USED
 DPL. . . . . . . . . . . . . . . . .  D  ADDR  0082H  NOT USED
-DRUCKSENSOR. . . . . . . . . . . . .  N  NUMB  00A0H  NOT USED
+DRUCKSENSOR. . . . . . . . . . . . .  N  NUMB  0080H
+DUSCHEVERLASSEN. . . . . . . . . . .  C  ADDR  0095H
+DUSCHEVERLASSENBAD . . . . . . . . .  C  ADDR  009EH
 EA . . . . . . . . . . . . . . . . .  B  ADDR  00AFH  NOT USED
 EC . . . . . . . . . . . . . . . . .  B  ADDR  00AEH  NOT USED
 EECON. . . . . . . . . . . . . . . .  D  ADDR  0096H  NOT USED
@@ -115,12 +258,13 @@ EXF2 . . . . . . . . . . . . . . . .  B  ADDR  00CEH  NOT USED
 EXTI0. . . . . . . . . . . . . . . .  C  ADDR  0003H  NOT USED
 EXTI1. . . . . . . . . . . . . . . .  C  ADDR  0013H  NOT USED
 F0 . . . . . . . . . . . . . . . . .  B  ADDR  00D5H  NOT USED
+FANFARE. . . . . . . . . . . . . . .  N  NUMB  0085H
 FE . . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
-HAHNCHECK. . . . . . . . . . . . . .  C  ADDR  000AH
 IE . . . . . . . . . . . . . . . . .  D  ADDR  00A8H  NOT USED
 IE0. . . . . . . . . . . . . . . . .  B  ADDR  0089H  NOT USED
 IE1. . . . . . . . . . . . . . . . .  B  ADDR  008BH  NOT USED
 INIT . . . . . . . . . . . . . . . .  C  ADDR  0002H
+INPUT. . . . . . . . . . . . . . . .  N  NUMB  0080H
 INT0 . . . . . . . . . . . . . . . .  B  ADDR  00B2H  NOT USED
 INT1 . . . . . . . . . . . . . . . .  B  ADDR  00B3H  NOT USED
 IP . . . . . . . . . . . . . . . . .  D  ADDR  00B8H  NOT USED
@@ -131,6 +275,7 @@ IPL0 . . . . . . . . . . . . . . . .  D  ADDR  00B8H  NOT USED
 IPL1 . . . . . . . . . . . . . . . .  D  ADDR  00B2H  NOT USED
 IT0. . . . . . . . . . . . . . . . .  B  ADDR  0088H  NOT USED
 IT1. . . . . . . . . . . . . . . . .  B  ADDR  008AH  NOT USED
+KALTWASSERVENTIL . . . . . . . . . .  N  NUMB  0083H  NOT USED
 KBE. . . . . . . . . . . . . . . . .  D  ADDR  009DH  NOT USED
 KBF. . . . . . . . . . . . . . . . .  D  ADDR  009EH  NOT USED
 KBLS . . . . . . . . . . . . . . . .  D  ADDR  009CH  NOT USED
@@ -141,7 +286,7 @@ P0 . . . . . . . . . . . . . . . . .  D  ADDR  0080H  NOT USED
 P1 . . . . . . . . . . . . . . . . .  D  ADDR  0090H  NOT USED
 P1M1 . . . . . . . . . . . . . . . .  D  ADDR  00D4H  NOT USED
 P1M2 . . . . . . . . . . . . . . . .  D  ADDR  00E2H  NOT USED
-P2 . . . . . . . . . . . . . . . . .  D  ADDR  00A0H
+P2 . . . . . . . . . . . . . . . . .  D  ADDR  00A0H  NOT USED
 P3 . . . . . . . . . . . . . . . . .  D  ADDR  00B0H  NOT USED
 P3M1 . . . . . . . . . . . . . . . .  D  ADDR  00D5H  NOT USED
 P3M2 . . . . . . . . . . . . . . . .  D  ADDR  00E3H  NOT USED
@@ -184,6 +329,8 @@ SADEN_0. . . . . . . . . . . . . . .  D  ADDR  00B9H  NOT USED
 SADEN_1. . . . . . . . . . . . . . .  D  ADDR  00BAH  NOT USED
 SBUF . . . . . . . . . . . . . . . .  D  ADDR  0099H  NOT USED
 SCON . . . . . . . . . . . . . . . .  D  ADDR  0098H  NOT USED
+SEGMENTWERT. . . . . . . . . . . . .  N  NUMB  00A0H
+SEGMENTZIFFER. . . . . . . . . . . .  N  NUMB  00B0H
 SINT . . . . . . . . . . . . . . . .  C  ADDR  0023H  NOT USED
 SM0. . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
 SM1. . . . . . . . . . . . . . . . .  B  ADDR  009EH  NOT USED
@@ -195,11 +342,12 @@ SPDAT. . . . . . . . . . . . . . . .  D  ADDR  00C5H  NOT USED
 SPDR . . . . . . . . . . . . . . . .  D  ADDR  0086H  NOT USED
 SPSR . . . . . . . . . . . . . . . .  D  ADDR  00AAH  NOT USED
 SPSTA. . . . . . . . . . . . . . . .  D  ADDR  00C4H  NOT USED
+STARTCHECK . . . . . . . . . . . . .  C  ADDR  0017H
 T0 . . . . . . . . . . . . . . . . .  B  ADDR  00B4H  NOT USED
 T1 . . . . . . . . . . . . . . . . .  B  ADDR  00B5H  NOT USED
 T2CON. . . . . . . . . . . . . . . .  D  ADDR  00C8H  NOT USED
 T2MOD. . . . . . . . . . . . . . . .  D  ADDR  00C9H  NOT USED
-TABLE. . . . . . . . . . . . . . . .  C  ADDR  001EH  NOT USED
+TABLE. . . . . . . . . . . . . . . .  C  ADDR  00A4H
 TB8. . . . . . . . . . . . . . . . .  B  ADDR  009BH  NOT USED
 TCLK . . . . . . . . . . . . . . . .  B  ADDR  00CCH  NOT USED
 TCON . . . . . . . . . . . . . . . .  D  ADDR  0088H  NOT USED
@@ -213,7 +361,7 @@ TI . . . . . . . . . . . . . . . . .  B  ADDR  0099H  NOT USED
 TIMER0 . . . . . . . . . . . . . . .  C  ADDR  000BH  NOT USED
 TIMER1 . . . . . . . . . . . . . . .  C  ADDR  001BH  NOT USED
 TIMER2 . . . . . . . . . . . . . . .  C  ADDR  002BH  NOT USED
-TIMERWERT. . . . . . . . . . . . . .  S  SPEC  R1
+TIMERWERT. . . . . . . . . . . . . .  S  SPEC  R0
 TL0. . . . . . . . . . . . . . . . .  D  ADDR  008AH
 TL1. . . . . . . . . . . . . . . . .  D  ADDR  008BH  NOT USED
 TL2. . . . . . . . . . . . . . . . .  D  ADDR  00CCH  NOT USED
@@ -222,10 +370,16 @@ TR0. . . . . . . . . . . . . . . . .  B  ADDR  008CH
 TR1. . . . . . . . . . . . . . . . .  B  ADDR  008EH  NOT USED
 TR2. . . . . . . . . . . . . . . . .  B  ADDR  00CAH  NOT USED
 TXD. . . . . . . . . . . . . . . . .  B  ADDR  00B1H  NOT USED
-WASSERBERECHNUNGSTART. . . . . . . .  C  ADDR  000FH
-WASSERHAHNSENSOR . . . . . . . . . .  N  NUMB  00A1H
-WASSERVERBRAUCH. . . . . . . . . . .  S  SPEC  R0
-WASSERZAEHLER. . . . . . . . . . . .  N  NUMB  0090H  NOT USED
+UEBERLAUFBERECHNUNG1 . . . . . . . .  C  ADDR  0045H
+UEBERLAUFBERECHNUNG2 . . . . . . . .  C  ADDR  004DH
+WARMWASSERVENTIL . . . . . . . . . .  N  NUMB  0082H  NOT USED
+WARNTON. . . . . . . . . . . . . . .  N  NUMB  0084H
+WASSERBERECHNUNGSTART. . . . . . . .  C  ADDR  001CH
+WASSERHAHNSENSOR . . . . . . . . . .  N  NUMB  0081H
+WASSERVERBRAUCH. . . . . . . . . . .  S  SPEC  R1
+WASSERVERBRAUCH2 . . . . . . . . . .  S  SPEC  R2
+WASSERVERBRAUCH3 . . . . . . . . . .  S  SPEC  R3
+WASSERZAEHLER. . . . . . . . . . . .  N  NUMB  0090H
 WDTCON . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
 WDTPRG . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
 WDTRST . . . . . . . . . . . . . . .  D  ADDR  00A6H  NOT USED

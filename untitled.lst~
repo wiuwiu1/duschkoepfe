@@ -1,48 +1,103 @@
 untitled                                                                                                                PAGE 1
                          1     ; Var
-  00A0                   2     DRUCKSENSOR EQU P2.0
-  00A1                   3     WASSERHAHNSENSOR EQU P2.1
-  0090                   4     WASSERZAEHLER EQU P1
-                         5
-                         6     WASSERVERBRAUCH EQU R0
-                         7     TIMERWERT EQU R1
-                         8
-                         9
-                        10     AJMP init
-                        11
-                        12     init:
-                        13     MOV TMOD, #11H
-                        14     MOV P2, #00H
-                        15     AJMP hahncheck
-                        16
-                        17     hahncheck:
-                        18     JNB WASSERHAHNSENSOR, hahncheck
-                        19     AJMP wasserberechnungstart
-                        20
-                        21     wasserberechnungstart:
-                        22     MOV WASSERVERBRAUCH, #0D
-                        23     MOV TH0, #00H
-                        24     MOV TL0, #0F5H
-                        25     SETB TR0
-                        26     berechnungsstep:
-                        27     CJNE TH0, #01H, berechnungsstep
-****ERROR:Invalidsetofoperands:cjneTH0,#01H,berechnungsstep
-                        28
-                        29
+  0080                   2     INPUT EQU P0
+  0080                   3     DRUCKSENSOR EQU INPUT.0
+  0081                   4     WASSERHAHNSENSOR EQU INPUT.1
+  0082                   5     WARMWASSERVENTIL EQU INPUT.2
+  0083                   6     KALTWASSERVENTIL EQU INPUT.3
+  0084                   7     WARNTON EQU INPUT.4
+  0085                   8     FANFARE EQU INPUT.5
+  0090                   9     WASSERZAEHLER EQU P1
+  00A0                  10     WASSERVERBRAUCHSTAND EQU P2
+  00B0                  11     WASSERVERBRAUCHSTAND2 EQU P3
+                        12
+                        13     TIMERWERT EQU R0
+                        14     WASSERVERBRAUCH EQU R1
+                        15     WASSERVERBRAUCH2 EQU R2
+                        16     WASSERVERBRAUCH3 EQU R3
+                        17
+0000 0102               18     AJMP init
+                        19
+                        20     init:
+0002 758911             21     MOV TMOD, #11H
+0005 758000             22     MOV INPUT, #00H
+0008 900059             23     MOV DPTR, #table
+000B 010D               24     AJMP startcheck
+                        25
+                        26     ;TODO wenn drucksensor dann wasser aufdrehen
+                        27     startcheck:
+000D 3081FD             28     JNB WASSERHAHNSENSOR, startcheck
+0010 0112               29     AJMP wasserberechnungstart
                         30
-                        31     table:
-0019 64                 32     db 100D
+                        31     wasserberechnungstart:
+0012 7900               32     MOV WASSERVERBRAUCH, #0D
+0014 758C00             33     MOV TH0, #00H
+0017 7401               34     MOV A, #1D
+0019 93                 35     MOVC A, @A+DPTR
+001A F58A               36     MOV TL0, A
+001C D28C               37     SETB TR0
+                        38
+                        39     berechnungsstep:
+001E A88C               40     MOV R0, TH0
+0020 B804FB             41     CJNE R0, #04H, berechnungsstep
+                        42     ;timer zurücksetzten
+0023 758C00             43     MOV TH0, #00H
+0026 7401               44     MOV A, #1D
+0028 93                 45     MOVC A, @A+DPTR
+0029 F58A               46     MOV TL0, A
+002B D28C               47     SETB TR0
+                        48     ;add wassersensor auf wasserverbrauch drauf
+002D E590               49     MOV A, WASSERZAEHLER
+002F 29                 50     ADD A, WASSERVERBRAUCH
+0030 F9                 51     MOV WASSERVERBRAUCH, A
+0031 20D709             52     JB C, ueberlaufberechnung1
+                        53     abbruchbedingungen:
+                        54     ;aktualisiere anzeige
+0034 8AA0               55     MOV WASSERVERBRAUCHSTAND, WASSERVERBRAUCH2
+0036 8BB0               56     MOV WASSERVERBRAUCHSTAND2, WASSERVERBRAUCH3
+                        57     ;todo wasser max erreicht
+0038 30800F             58     JNB DRUCKSENSOR, duscheverlassen
+003B 011E               59     AJMP berechnungsstep
+                        60
+                        61     ueberlaufberechnung1:
+003D EA                 62     MOV A, WASSERVERBRAUCH2
+003E 04                 63     INC A
+003F FA                 64     MOV WASSERVERBRAUCH2, A
+0040 20D702             65     JB C, ueberlaufberechnung2
+0043 0134               66     AJMP abbruchbedingungen
+                        67
+                        68     ueberlaufberechnung2:
+0045 EB                 69     MOV A, WASSERVERBRAUCH3
+0046 04                 70     INC A
+0047 FB                 71     MOV WASSERVERBRAUCH3, A
+0048 0134               72     AJMP abbruchbedingungen
+                        73
+                        74     ;abbruchbedingungnen:
+                        75     duscheVerlassen:
+004A 208106             76     JB WASSERHAHNSENSOR, duscheVerlassenBad
+004D D285               77     SETB FANFARE
+004F C285               78     CLR FANFARE
+0051 0102               79     AJMP init
+                        80
+                        81     duscheVerlassenBad:
+0053 D284               82     SETB WARNTON
+0055 C284               83     CLR WARNTON
+0057 0102               84     AJMP init
+                        85
+                        86     table:
+0059 64                 87     db 100D
+005A 18                 88     db 00011000B
 ****WARNING:Missing`END'directive
-ASSEMBLY COMPLETE, NO ERRORS FOUND, 2 WARNINGS
+ASSEMBLY COMPLETE, NO ERRORS FOUND, 1 WARNING
 
 
 ERROR SUMMARY:
-Line 27, ERROR:Invalidsetofoperands:cjneTH0,#01H,berechnungsstep
-Line 33, WARNING:Missing`END'directive
+Line 88, WARNING:Missing`END'directive
 
 SYMBOL TABLE:
 ??MCU_8051_IDE . . . . . . . . . . .  N  NUMB  8051H  NOT USED
 ??VERSION. . . . . . . . . . . . . .  N  NUMB  0149H  NOT USED
+ABBRUCHBEDINGUNGEN . . . . . . . . .  C  ADDR  0034H
 AC . . . . . . . . . . . . . . . . .  B  ADDR  00D6H  NOT USED
 ACC. . . . . . . . . . . . . . . . .  D  ADDR  00E0H  NOT USED
 ACSR . . . . . . . . . . . . . . . .  D  ADDR  0097H  NOT USED
@@ -56,7 +111,7 @@ AUXR1. . . . . . . . . . . . . . . .  D  ADDR  00A2H  NOT USED
 B. . . . . . . . . . . . . . . . . .  D  ADDR  00F0H  NOT USED
 BDRCON . . . . . . . . . . . . . . .  D  ADDR  009BH  NOT USED
 BDRCON_1 . . . . . . . . . . . . . .  D  ADDR  009CH  NOT USED
-BERECHNUNGSSTEP. . . . . . . . . . .  C  ADDR  0019H  NOT USED
+BERECHNUNGSSTEP. . . . . . . . . . .  C  ADDR  001EH
 BRL. . . . . . . . . . . . . . . . .  D  ADDR  009AH  NOT USED
 CCAP0H . . . . . . . . . . . . . . .  D  ADDR  00FAH  NOT USED
 CCAP0L . . . . . . . . . . . . . . .  D  ADDR  00EAH  NOT USED
@@ -101,7 +156,9 @@ DP1H . . . . . . . . . . . . . . . .  D  ADDR  0085H  NOT USED
 DP1L . . . . . . . . . . . . . . . .  D  ADDR  0084H  NOT USED
 DPH. . . . . . . . . . . . . . . . .  D  ADDR  0083H  NOT USED
 DPL. . . . . . . . . . . . . . . . .  D  ADDR  0082H  NOT USED
-DRUCKSENSOR. . . . . . . . . . . . .  N  NUMB  00A0H  NOT USED
+DRUCKSENSOR. . . . . . . . . . . . .  N  NUMB  0080H
+DUSCHEVERLASSEN. . . . . . . . . . .  C  ADDR  004AH
+DUSCHEVERLASSENBAD . . . . . . . . .  C  ADDR  0053H
 EA . . . . . . . . . . . . . . . . .  B  ADDR  00AFH  NOT USED
 EC . . . . . . . . . . . . . . . . .  B  ADDR  00AEH  NOT USED
 EECON. . . . . . . . . . . . . . . .  D  ADDR  0096H  NOT USED
@@ -116,12 +173,13 @@ EXF2 . . . . . . . . . . . . . . . .  B  ADDR  00CEH  NOT USED
 EXTI0. . . . . . . . . . . . . . . .  C  ADDR  0003H  NOT USED
 EXTI1. . . . . . . . . . . . . . . .  C  ADDR  0013H  NOT USED
 F0 . . . . . . . . . . . . . . . . .  B  ADDR  00D5H  NOT USED
+FANFARE. . . . . . . . . . . . . . .  N  NUMB  0085H
 FE . . . . . . . . . . . . . . . . .  B  ADDR  009FH  NOT USED
-HAHNCHECK. . . . . . . . . . . . . .  C  ADDR  000AH
 IE . . . . . . . . . . . . . . . . .  D  ADDR  00A8H  NOT USED
 IE0. . . . . . . . . . . . . . . . .  B  ADDR  0089H  NOT USED
 IE1. . . . . . . . . . . . . . . . .  B  ADDR  008BH  NOT USED
 INIT . . . . . . . . . . . . . . . .  C  ADDR  0002H
+INPUT. . . . . . . . . . . . . . . .  N  NUMB  0080H
 INT0 . . . . . . . . . . . . . . . .  B  ADDR  00B2H  NOT USED
 INT1 . . . . . . . . . . . . . . . .  B  ADDR  00B3H  NOT USED
 IP . . . . . . . . . . . . . . . . .  D  ADDR  00B8H  NOT USED
@@ -132,6 +190,7 @@ IPL0 . . . . . . . . . . . . . . . .  D  ADDR  00B8H  NOT USED
 IPL1 . . . . . . . . . . . . . . . .  D  ADDR  00B2H  NOT USED
 IT0. . . . . . . . . . . . . . . . .  B  ADDR  0088H  NOT USED
 IT1. . . . . . . . . . . . . . . . .  B  ADDR  008AH  NOT USED
+KALTWASSERVENTIL . . . . . . . . . .  N  NUMB  0083H  NOT USED
 KBE. . . . . . . . . . . . . . . . .  D  ADDR  009DH  NOT USED
 KBF. . . . . . . . . . . . . . . . .  D  ADDR  009EH  NOT USED
 KBLS . . . . . . . . . . . . . . . .  D  ADDR  009CH  NOT USED
@@ -142,7 +201,7 @@ P0 . . . . . . . . . . . . . . . . .  D  ADDR  0080H  NOT USED
 P1 . . . . . . . . . . . . . . . . .  D  ADDR  0090H  NOT USED
 P1M1 . . . . . . . . . . . . . . . .  D  ADDR  00D4H  NOT USED
 P1M2 . . . . . . . . . . . . . . . .  D  ADDR  00E2H  NOT USED
-P2 . . . . . . . . . . . . . . . . .  D  ADDR  00A0H
+P2 . . . . . . . . . . . . . . . . .  D  ADDR  00A0H  NOT USED
 P3 . . . . . . . . . . . . . . . . .  D  ADDR  00B0H  NOT USED
 P3M1 . . . . . . . . . . . . . . . .  D  ADDR  00D5H  NOT USED
 P3M2 . . . . . . . . . . . . . . . .  D  ADDR  00E3H  NOT USED
@@ -196,11 +255,12 @@ SPDAT. . . . . . . . . . . . . . . .  D  ADDR  00C5H  NOT USED
 SPDR . . . . . . . . . . . . . . . .  D  ADDR  0086H  NOT USED
 SPSR . . . . . . . . . . . . . . . .  D  ADDR  00AAH  NOT USED
 SPSTA. . . . . . . . . . . . . . . .  D  ADDR  00C4H  NOT USED
+STARTCHECK . . . . . . . . . . . . .  C  ADDR  000DH
 T0 . . . . . . . . . . . . . . . . .  B  ADDR  00B4H  NOT USED
 T1 . . . . . . . . . . . . . . . . .  B  ADDR  00B5H  NOT USED
 T2CON. . . . . . . . . . . . . . . .  D  ADDR  00C8H  NOT USED
 T2MOD. . . . . . . . . . . . . . . .  D  ADDR  00C9H  NOT USED
-TABLE. . . . . . . . . . . . . . . .  C  ADDR  0019H  NOT USED
+TABLE. . . . . . . . . . . . . . . .  C  ADDR  0059H
 TB8. . . . . . . . . . . . . . . . .  B  ADDR  009BH  NOT USED
 TCLK . . . . . . . . . . . . . . . .  B  ADDR  00CCH  NOT USED
 TCON . . . . . . . . . . . . . . . .  D  ADDR  0088H  NOT USED
@@ -214,7 +274,7 @@ TI . . . . . . . . . . . . . . . . .  B  ADDR  0099H  NOT USED
 TIMER0 . . . . . . . . . . . . . . .  C  ADDR  000BH  NOT USED
 TIMER1 . . . . . . . . . . . . . . .  C  ADDR  001BH  NOT USED
 TIMER2 . . . . . . . . . . . . . . .  C  ADDR  002BH  NOT USED
-TIMERWERT. . . . . . . . . . . . . .  S  SPEC  R1
+TIMERWERT. . . . . . . . . . . . . .  S  SPEC  R0
 TL0. . . . . . . . . . . . . . . . .  D  ADDR  008AH
 TL1. . . . . . . . . . . . . . . . .  D  ADDR  008BH  NOT USED
 TL2. . . . . . . . . . . . . . . . .  D  ADDR  00CCH  NOT USED
@@ -223,10 +283,18 @@ TR0. . . . . . . . . . . . . . . . .  B  ADDR  008CH
 TR1. . . . . . . . . . . . . . . . .  B  ADDR  008EH  NOT USED
 TR2. . . . . . . . . . . . . . . . .  B  ADDR  00CAH  NOT USED
 TXD. . . . . . . . . . . . . . . . .  B  ADDR  00B1H  NOT USED
-WASSERBERECHNUNGSTART. . . . . . . .  C  ADDR  000FH
-WASSERHAHNSENSOR . . . . . . . . . .  N  NUMB  00A1H
-WASSERVERBRAUCH. . . . . . . . . . .  S  SPEC  R0
-WASSERZAEHLER. . . . . . . . . . . .  N  NUMB  0090H  NOT USED
+UEBERLAUFBERECHNUNG1 . . . . . . . .  C  ADDR  003DH
+UEBERLAUFBERECHNUNG2 . . . . . . . .  C  ADDR  0045H
+WARMWASSERVENTIL . . . . . . . . . .  N  NUMB  0082H  NOT USED
+WARNTON. . . . . . . . . . . . . . .  N  NUMB  0084H
+WASSERBERECHNUNGSTART. . . . . . . .  C  ADDR  0012H
+WASSERHAHNSENSOR . . . . . . . . . .  N  NUMB  0081H
+WASSERVERBRAUCH. . . . . . . . . . .  S  SPEC  R1
+WASSERVERBRAUCH2 . . . . . . . . . .  S  SPEC  R2
+WASSERVERBRAUCH3 . . . . . . . . . .  S  SPEC  R3
+WASSERVERBRAUCHSTAND . . . . . . . .  N  NUMB  00A0H
+WASSERVERBRAUCHSTAND2. . . . . . . .  N  NUMB  00B0H
+WASSERZAEHLER. . . . . . . . . . . .  N  NUMB  0090H
 WDTCON . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
 WDTPRG . . . . . . . . . . . . . . .  D  ADDR  00A7H  NOT USED
 WDTRST . . . . . . . . . . . . . . .  D  ADDR  00A6H  NOT USED

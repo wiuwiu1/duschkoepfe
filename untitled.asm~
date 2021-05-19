@@ -1,33 +1,139 @@
 ; Var
-DRUCKSENSOR EQU P2.0
-WASSERHAHNSENSOR EQU P2.1
+INPUT EQU P0 
+DRUCKSENSOR EQU INPUT.0
+WASSERHAHNSENSOR EQU INPUT.1
+WARMWASSERVENTIL EQU INPUT.2
+KALTWASSERVENTIL EQU INPUT.3
+WARNTON EQU INPUT.4
+FANFARE EQU INPUT.5
 WASSERZAEHLER EQU P1
+SEGMENTWERT EQU P2
+SEGMENTZIFFER EQU P3
 
-WASSERVERBRAUCH EQU R0
-TIMERWERT EQU R1
-
+TIMERWERT EQU R0
+WASSERVERBRAUCH EQU R1
+WASSERVERBRAUCH2 EQU R2
+WASSERVERBRAUCH3 EQU R3
+DISPLAYWERT EQU R4
 
 AJMP init
 
 init:
 MOV TMOD, #11H
-MOV P2, #00H
-AJMP hahncheck
+MOV TIMERWERT, #00H
+MOV WASSERVERBRAUCH, #00H
+MOV WASSERVERBRAUCH2, #00H
+MOV WASSERVERBRAUCH3, #00H
+MOV DISPLAYWERT, #00H
+MOV INPUT, #00H
+MOV DPTR, #table 
+AJMP startcheck
 
-hahncheck:
-JNB WASSERHAHNSENSOR, hahncheck
+;TODO wenn drucksensor dann wasser aufdrehen
+startcheck:
+JNB WASSERHAHNSENSOR, startcheck
 AJMP wasserberechnungstart
 
 wasserberechnungstart:
 MOV WASSERVERBRAUCH, #0D
 MOV TH0, #00H
-MOV TL0, #0F5H
+MOV A, #1D
+MOVC A, @A+DPTR
+MOV TL0, A
 SETB TR0
+
 berechnungsstep:
-MOV R1, TH0
-CJNE R1, #01H, berechnungsstep
+MOV R0, TH0
+CJNE R0, #04H, berechnungsstep
+;timer zurücksetzten
+MOV TH0, #00H
+MOV A, #11D
+MOVC A, @A+DPTR
+MOV TL0, A
+SETB TR0
+;add wassersensor auf wasserverbrauch drauf
+MOV A, WASSERZAEHLER
+ADD A, WASSERVERBRAUCH
+MOV WASSERVERBRAUCH, A
+JB C, ueberlaufberechnung1
+AJMP ausgabe
+abbruchbedingungen:
+;todo wasser max erreicht
+JNB DRUCKSENSOR, duscheverlassen 
+AJMP berechnungsstep
 
+ueberlaufberechnung1:
+MOV A, WASSERVERBRAUCH2
+INC A
+MOV WASSERVERBRAUCH2, A
+JB C, ueberlaufberechnung2
+AJMP abbruchbedingungen
 
+ueberlaufberechnung2:
+MOV A, WASSERVERBRAUCH3
+INC A
+MOV WASSERVERBRAUCH3, A
+AJMP abbruchbedingungen
+
+ausgabe:
+;displaywert aus wasservebrauch auf 1 byte kürzen
+MOV DISPLAYWERT.0, WASSERVERBRAUCH2.2
+MOV DISPLAYWERT.1, WASSERVERBRAUCH2.3
+MOV DISPLAYWERT.2, WASSERVERBRAUCH2.4
+MOV DISPLAYWERT.3, WASSERVERBRAUCH2.5
+MOV DISPLAYWERT.4, WASSERVERBRAUCH2.6
+MOV DISPLAYWERT.5, WASSERVERBRAUCH2.7
+MOV DISPLAYWERT.6, WASSERVERBRAUCH3.0
+MOV DISPLAYWERT.7, WASSERVERBRAUCH3.1
+
+;1. (vorderste) ziffer setzen. ist immer 0
+MOV segmentziffer, #1000B
+MOV A, #0D
+MOVC A, @A+DPTR
+MOV segmentwert, A 
+
+;2. ziffer setzen
+MOV segmentziffer, #0100B
+MOV A, DISPLAYWERT
+MOV B, #100D
+DIV AB
+MOVC A, @A+DPTR
+MOV segmentwert, A
+MOV displaywert, B
+
+;3. ziffer setzen
+MOV segmentziffer, #0010B
+MOV A, DISPLAYWERT
+MOV B, #10D
+DIV AB
+MOVC A, @A+DPTR
+MOV segmentwert, A
+MOV displaywert, B
+
+;4. ziffer setzen
+MOV segmentziffer, #0001B
+MOV A, DISPLAYWERT
+MOVC A, @A+DPTR
+MOV segmentwert, A
+
+AJMP abbruchbedingungen
+
+;abbruchbedingungnen:
+duscheVerlassen:
+JB WASSERHAHNSENSOR, duscheVerlassenBad
+SETB FANFARE
+CLR FANFARE
+AJMP init
+
+duscheVerlassenBad:
+SETB WARNTON
+CLR WARNTON
+AJMP init
 
 table:
+db 11000000b
+db 11111001b, 10100100b, 10110000b
+db 10011001b, 10010010b, 10000010b
+db 11111000b, 10000000b, 10010000b
 db 100D
+db 00011000B
