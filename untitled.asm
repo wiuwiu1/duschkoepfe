@@ -31,7 +31,10 @@ AJMP startcheck
 
 ;TODO wenn drucksensor dann wasser aufdrehen
 startcheck:
+JNB DRUCKSENSOR, startcheck
 JNB WASSERHAHNSENSOR, startcheck
+SETB WARMWASSERVENTIL
+SETB KALTWASSERVENTIL
 AJMP wasserberechnungstart
 
 wasserberechnungstart:
@@ -52,69 +55,103 @@ MOVC A, @A+DPTR
 MOV TL0, A
 SETB TR0
 ;add wassersensor auf wasserverbrauch drauf
+CLR C
 MOV A, WASSERZAEHLER
 ADD A, WASSERVERBRAUCH
 MOV WASSERVERBRAUCH, A
-JB C, ueberlaufberechnung1
+JC ueberlaufberechnung1
 AJMP ausgabe
 abbruchbedingungen:
-;todo wasser max erreicht
+;wasser max erreicht
+CLR C
+CJNE R4, #100D, notequal
+AJMP wassermax
+notequal:
+JNC wassermax
+;hat dusche verlassen
 JNB DRUCKSENSOR, duscheverlassen 
 AJMP berechnungsstep
 
 ueberlaufberechnung1:
 MOV A, WASSERVERBRAUCH2
+CLR C
 INC A
 MOV WASSERVERBRAUCH2, A
-JB C, ueberlaufberechnung2
-AJMP abbruchbedingungen
+JC ueberlaufberechnung2
+AJMP ausgabe
 
 ueberlaufberechnung2:
 MOV A, WASSERVERBRAUCH3
+CLR C
 INC A
 MOV WASSERVERBRAUCH3, A
-AJMP abbruchbedingungen
+AJMP ausgabe
 
 ausgabe:
 ;displaywert aus wasservebrauch auf 1 byte kürzen
-MOV DISPLAYWERT.0, WASSERVERBRAUCH2.2
-MOV DISPLAYWERT.1, WASSERVERBRAUCH2.3
-MOV DISPLAYWERT.2, WASSERVERBRAUCH2.4
-MOV DISPLAYWERT.3, WASSERVERBRAUCH2.5
-MOV DISPLAYWERT.4, WASSERVERBRAUCH2.6
-MOV DISPLAYWERT.5, WASSERVERBRAUCH2.7
-MOV DISPLAYWERT.6, WASSERVERBRAUCH3.0
-MOV DISPLAYWERT.7, WASSERVERBRAUCH3.1
+MOV B, wasserverbrauch2
+
+MOV C, B.2
+MOV A.0, C
+
+MOV C, B.3
+MOV A.1, C
+
+MOV C, B.4
+MOV A.2, C
+
+MOV C, B.5
+MOV A.3, C
+
+MOV C, B.6
+MOV A.4, C
+
+MOV C, B.7
+MOV A.5, C
+
+MOV B, WASSERVERBRAUCH3
+
+MOV C, B.0
+MOV A.6, C
+
+MOV C, B.1
+MOV A.7, C
+
+MOV DISPLAYWERT, A
 
 ;1. (vorderste) ziffer setzen. ist immer 0
-MOV segmentziffer, #1000B
 MOV A, #0D
 MOVC A, @A+DPTR
 MOV segmentwert, A 
+MOV segmentziffer, #0111B
+MOV segmentziffer, #1111B
 
 ;2. ziffer setzen
-MOV segmentziffer, #0100B
 MOV A, DISPLAYWERT
 MOV B, #100D
 DIV AB
 MOVC A, @A+DPTR
 MOV segmentwert, A
 MOV displaywert, B
+MOV segmentziffer, #1011B
+MOV segmentziffer, #1111B
 
 ;3. ziffer setzen
-MOV segmentziffer, #0010B
 MOV A, DISPLAYWERT
 MOV B, #10D
 DIV AB
 MOVC A, @A+DPTR
 MOV segmentwert, A
 MOV displaywert, B
+MOV segmentziffer, #1101B
+MOV segmentziffer, #1111B
 
 ;4. ziffer setzen
-MOV segmentziffer, #0001B
 MOV A, DISPLAYWERT
 MOVC A, @A+DPTR
 MOV segmentwert, A
+MOV segmentziffer, #1110B
+MOV segmentziffer, #1111B
 
 AJMP abbruchbedingungen
 
@@ -130,6 +167,14 @@ SETB WARNTON
 CLR WARNTON
 AJMP init
 
+wasserMax:
+SETB WARNTON
+CLR WARNTON
+CLR warmwasserventil
+wasserMaxLoop:
+JB drucksensor, wassermaxloop
+AJMP init
+
 table:
 db 11000000b
 db 11111001b, 10100100b, 10110000b
@@ -137,3 +182,5 @@ db 10011001b, 10010010b, 10000010b
 db 11111000b, 10000000b, 10010000b
 db 100D
 db 00011000B
+
+END
