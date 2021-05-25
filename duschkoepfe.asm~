@@ -89,7 +89,7 @@ AJMP ausgabe
 
 ausgabe:
 ;Displaywert aus Wasservebrauch auf 1 Byte kürzen
-MOV B, wasserverbrauch2
+MOV B, WASSERVERBRAUCH2
 
 MOV C, B.2
 MOV A.0, C
@@ -122,36 +122,36 @@ MOV DISPLAYWERT, A
 ;1.(vorderste) Ziffer setzen - immer 0
 MOV A, #0D
 MOVC A, @A+DPTR
-MOV segmentwert, A 
-MOV segmentziffer, #0111B
-MOV segmentziffer, #1111B
+MOV SEGMENTWERT, A 
+MOV SEGMENTZIFFER, #0111B
+MOV SEGMENTZIFFER, #1111B
 
 ;2. Ziffer setzen
 MOV A, DISPLAYWERT
 MOV B, #100D
 DIV AB
 MOVC A, @A+DPTR
-MOV segmentwert, A
-MOV displaywert, B
-MOV segmentziffer, #1011B
-MOV segmentziffer, #1111B
+MOV SEGMENTWERT, A
+MOV DISPLAYWERT, B
+MOV SEGMENTZIFFER, #1011B
+MOV SEGMENTZIFFER, #1111B
 
 ;3. Ziffer setzen
 MOV A, DISPLAYWERT
 MOV B, #10D
 DIV AB
 MOVC A, @A+DPTR
-MOV segmentwert, A
-MOV displaywert, B
-MOV segmentziffer, #1101B
-MOV segmentziffer, #1111B
+MOV SEGMENTWERT, A
+MOV DISPLAYWERT, B
+MOV SEGMENTZIFFER, #1101B
+MOV SEGMENTZIFFER, #1111B
 
 ;4. Ziffer setzen
 MOV A, DISPLAYWERT
 MOVC A, @A+DPTR
-MOV segmentwert, A
-MOV segmentziffer, #1110B
-MOV segmentziffer, #1111B
+MOV SEGMENTWERT, A
+MOV SEGMENTZIFFER, #1110B
+MOV SEGMENTZIFFER, #1111B
 
 AJMP abbruchbedingungen
 

@@ -90,7 +90,7 @@ duschkoepfe                                                                     
                         89
                         90     ausgabe:
                         91     ;Displaywert aus Wasservebrauch auf 1 Byte kürzen
-0062 8AF0               92     MOV B, wasserverbrauch2
+0062 8AF0               92     MOV B, WASSERVERBRAUCH2
                         93
 0064 A2F2               94     MOV C, B.2
 0066 92E0               95     MOV A.0, C
@@ -123,36 +123,36 @@ duschkoepfe                                                                     
                        122     ;1.(vorderste) Ziffer setzen - immer 0
 0087 7400              123     MOV A, #0D
 0089 93                124     MOVC A, @A+DPTR
-008A F5A0              125     MOV segmentwert, A
-008C 75B007            126     MOV segmentziffer, #0111B
-008F 75B00F            127     MOV segmentziffer, #1111B
+008A F5A0              125     MOV SEGMENTWERT, A
+008C 75B007            126     MOV SEGMENTZIFFER, #0111B
+008F 75B00F            127     MOV SEGMENTZIFFER, #1111B
                        128
                        129     ;2. Ziffer setzen
 0092 EC                130     MOV A, DISPLAYWERT
 0093 75F064            131     MOV B, #100D
 0096 84                132     DIV AB
 0097 93                133     MOVC A, @A+DPTR
-0098 F5A0              134     MOV segmentwert, A
-009A ACF0              135     MOV displaywert, B
-009C 75B00B            136     MOV segmentziffer, #1011B
-009F 75B00F            137     MOV segmentziffer, #1111B
+0098 F5A0              134     MOV SEGMENTWERT, A
+009A ACF0              135     MOV DISPLAYWERT, B
+009C 75B00B            136     MOV SEGMENTZIFFER, #1011B
+009F 75B00F            137     MOV SEGMENTZIFFER, #1111B
                        138
                        139     ;3. Ziffer setzen
 00A2 EC                140     MOV A, DISPLAYWERT
 00A3 75F00A            141     MOV B, #10D
 00A6 84                142     DIV AB
 00A7 93                143     MOVC A, @A+DPTR
-00A8 F5A0              144     MOV segmentwert, A
-00AA ACF0              145     MOV displaywert, B
-00AC 75B00D            146     MOV segmentziffer, #1101B
-00AF 75B00F            147     MOV segmentziffer, #1111B
+00A8 F5A0              144     MOV SEGMENTWERT, A
+00AA ACF0              145     MOV DISPLAYWERT, B
+00AC 75B00D            146     MOV SEGMENTZIFFER, #1101B
+00AF 75B00F            147     MOV SEGMENTZIFFER, #1111B
                        148
                        149     ;4. Ziffer setzen
 00B2 EC                150     MOV A, DISPLAYWERT
 00B3 93                151     MOVC A, @A+DPTR
-00B4 F5A0              152     MOV segmentwert, A
-00B6 75B00E            153     MOV segmentziffer, #1110B
-00B9 75B00F            154     MOV segmentziffer, #1111B
+00B4 F5A0              152     MOV SEGMENTWERT, A
+00B6 75B00E            153     MOV SEGMENTZIFFER, #1110B
+00B9 75B00F            154     MOV SEGMENTZIFFER, #1111B
                        155
 00BC 0147              156     AJMP abbruchbedingungen
                        157

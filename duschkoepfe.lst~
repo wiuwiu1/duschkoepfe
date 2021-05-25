@@ -174,7 +174,7 @@ duschkoepfe                                                                     
 00D1 C282              173     CLR warmwasserventil
                        174
                        175     wasserMaxLoop:
-00D3 2080FD            176     JB drucksensor, wassermaxloop
+00D3 2080FD            176     JB DRUCKSENSOR, wassermaxloop
 00D6 0102              177     AJMP init
                        178
                        179     table:
