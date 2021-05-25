@@ -15,6 +15,7 @@ WASSERVERBRAUCH EQU R1
 WASSERVERBRAUCH2 EQU R2
 WASSERVERBRAUCH3 EQU R3
 DISPLAYWERT EQU R4
+DISPLAYWERTKOPIE EQU R5
 
 AJMP init
 
@@ -64,7 +65,7 @@ AJMP ausgabe
 abbruchbedingungen:
 ;Wasser max erreicht
 CLR C
-CJNE R4, #100D, notequal
+CJNE R5, #100D, notequal
 AJMP wassermax
 notequal:
 JNC wassermax
@@ -118,6 +119,7 @@ MOV C, B.1
 MOV A.7, C
 
 MOV DISPLAYWERT, A
+MOV DISPLAYWERTKOPIE, A
 
 ;1.(vorderste) Ziffer setzen - immer 0
 MOV A, #0D
