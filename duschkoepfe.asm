@@ -68,7 +68,7 @@ CJNE R4, #100D, notequal
 AJMP wassermax
 notequal:
 JNC wassermax
-;hat dusche verlassen
+;Dusche verlassen
 JNB DRUCKSENSOR, duscheverlassen 
 AJMP berechnungsstep
 
@@ -88,7 +88,7 @@ MOV WASSERVERBRAUCH3, A
 AJMP ausgabe
 
 ausgabe:
-;displaywert aus wasservebrauch auf 1 byte kürzen
+;Displaywert aus Wasservebrauch auf 1 Byte kürzen
 MOV B, wasserverbrauch2
 
 MOV C, B.2
