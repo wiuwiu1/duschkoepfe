@@ -69,7 +69,7 @@ duschkoepfe                                                                     
 004B 01CD               68     AJMP wassermax
                         69     notequal:
 004D 507E               70     JNC wassermax
-                        71     ;hat dusche verlassen
+                        71     ;Dusche verlassen
 004F 30806C             72     JNB DRUCKSENSOR, duscheverlassen
 0052 012F               73     AJMP berechnungsstep
                         74
@@ -89,7 +89,7 @@ duschkoepfe                                                                     
 0060 0162               88     AJMP ausgabe
                         89
                         90     ausgabe:
-                        91     ;displaywert aus wasservebrauch auf 1 byte kürzen
+                        91     ;Displaywert aus Wasservebrauch auf 1 Byte kürzen
 0062 8AF0               92     MOV B, wasserverbrauch2
                         93
 0064 A2F2               94     MOV C, B.2

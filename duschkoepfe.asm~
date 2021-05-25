@@ -173,7 +173,7 @@ CLR WARNTON
 CLR warmwasserventil
 
 wasserMaxLoop:
-JB drucksensor, wassermaxloop
+JB DRUCKSENSOR, wassermaxloop
 AJMP init
 
 table:
