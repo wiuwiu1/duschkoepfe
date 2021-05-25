@@ -170,7 +170,7 @@ AJMP init
 wasserMax:
 SETB WARNTON
 CLR WARNTON
-CLR warmwasserventil
+CLR WARMWASSERVENTIL
 
 wasserMaxLoop:
 JB DRUCKSENSOR, wassermaxloop
